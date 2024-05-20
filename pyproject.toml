@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "music-generation"
+version = "0.1.0"
+description = ""
+authors = ["sour-soup <kiziyepi8@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
