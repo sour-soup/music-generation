@@ -1,16 +1,9 @@
-# This is a sample Python script.
+from utils import midi_to_notes, create_midi
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    input_file = 'data/sample.mid'
+    output_file = 'data/sample_output.mid'
+    notes = midi_to_notes(input_file, quantization=32)
+    print(notes)
+    create_midi(notes, output_file, bpm=240, quantization=32)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/

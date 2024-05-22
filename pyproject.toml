@@ -1,12 +1,18 @@
 [tool.poetry]
 name = "music-generation"
 version = "0.1.0"
-description = ""
+description = "coursework"
 authors = ["sour-soup <kiziyepi8@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pretty-midi = "^0.2.10"
+numpy = "^1.26.4"
+torch = "^2.3.0"
+tqdm = "^4.66.4"
+mido = "^1.3.2"
+ipython = "^8.24.0"
 
 
 [build-system]
