@@ -1,7 +1,7 @@
 from utils import midi_to_notes, create_midi
 
 if __name__ == '__main__':
-    input_file = 'data/sample.mid'
+    input_file = 'data/irish/1.mid'
     output_file = 'data/sample_output.mid'
     notes = midi_to_notes(input_file, quantization=32)
     print(notes)

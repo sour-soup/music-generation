@@ -5,12 +5,11 @@ from utils import midi_to_notes, transpose_notes
 
 
 class MidiNotesDataset(Dataset):
-    def __init__(self, midi_files, sequence_length, max_file_num=None, transpositions=range(-6, 6), quantization=16):
+    def __init__(self, midi_files, sequence_length, transpositions=range(-6, 6), quantization=16):
         self.midi_files = midi_files
         self.sequence_length = sequence_length
         self.transpositions = transpositions
         self.quantization = quantization
-        self.max_file_num = len(midi_files) if max_file_num is None else min(len(midi_files), max_file_num)
         self.data = []
         self._load_data()
 
@@ -31,4 +30,7 @@ class MidiNotesDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        return torch.tensor(self.data[idx], dtype=torch.float)
+        sequence = torch.tensor(self.data[idx], dtype=torch.float)
+        X = sequence[:-1]
+        y = sequence[-1]
+        return X, y
