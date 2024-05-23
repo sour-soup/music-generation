@@ -14,7 +14,7 @@ learning_rate = 0.005
 data_dir = "./data/irish/*.mid"
 files = glob(data_dir)[:max_file_num]
 
-models_dir = "/models/"
+models_dir = "./models/"
 save_model_file = "model.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Вычисляем на {device}...")
@@ -25,7 +25,7 @@ loader = torch.utils.data.DataLoader(training_data, batch_size=batch_size, shuff
 
 model = MusicGenerationModel().to(device)
 criterion_note = nn.CrossEntropyLoss()
-criterion_duration = nn.CrossEntropyLoss()
+criterion_duration = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 for epoch in tqdm(range(epochs)):

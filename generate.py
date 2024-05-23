@@ -5,23 +5,21 @@ from utils import create_midi, midi_to_notes
 
 
 def generate_sequence(model, initial_sequence, seq_len, device):
-    model.eval()
     generated = initial_sequence.tolist()
     current_sequence = torch.tensor(initial_sequence, dtype=torch.float).unsqueeze(0).to(device)
-
-    with torch.no_grad():
-        for _ in range(seq_len):
+    for _ in range(seq_len):
+        model.eval()
+        with torch.no_grad():
             note_out, duration_out = model(current_sequence)
             note = torch.argmax(note_out, dim=1).item()
             duration = torch.argmax(duration_out, dim=1).item()
             generated.append([note, duration])
             current_sequence = torch.tensor(generated[-len(initial_sequence):], dtype=torch.float).unsqueeze(0).to(device)
-
     return np.array(generated)
 
 
 models_dir = "./models/"
-model_path = "model.pth"
+model_path = f"{models_dir}model200.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = MusicGenerationModel().to(device)
 model.load_state_dict(torch.load(model_path, map_location=device))
