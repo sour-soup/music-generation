@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn, optim
 from glob import glob
@@ -6,43 +7,45 @@ from dataset import MidiNotesDataset
 from models import MusicGenerationModel
 
 batch_size = 64
-seq_len = 25
-max_file_num = 20
-epochs = 200
-learning_rate = 0.005
+seq_len = 50
+max_file_num = 100
+epochs = 1000
+learning_rate = 0.002
 
 data_dir = "./data/irish/*.mid"
 files = glob(data_dir)[:max_file_num]
 
-models_dir = "./models/"
+models_dir = "./models/train"
 save_model_file = "model.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Вычисляем на {device}...")
 
-training_data = MidiNotesDataset(files, seq_len)
+training_data = MidiNotesDataset(files, seq_len, transpositions=range(-3, 3))
 print(f"Загружено {len(training_data)} последовательностей...")
 loader = torch.utils.data.DataLoader(training_data, batch_size=batch_size, shuffle=True)
 
-model = MusicGenerationModel().to(device)
-criterion_note = nn.CrossEntropyLoss()
-criterion_duration = nn.MSELoss()
+n_notes_vocab = len(training_data.note_to_idx)
+n_durations_vocab = len(training_data.duration_to_idx)
+idx_to_note = training_data.idx_to_note
+idx_to_duration = training_data.idx_to_duration
+torch.save([idx_to_note, idx_to_duration], f"{models_dir}/vocabs.pth")
+
+model = MusicGenerationModel(2, 512, n_notes_vocab, n_durations_vocab).to(device)
+criterion_note = nn.CrossEntropyLoss(reduction="sum")
+criterion_duration = nn.CrossEntropyLoss(reduction="sum")
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+best_model = None
+best_loss = np.inf
 for epoch in tqdm(range(epochs)):
     model.train()
-    running_loss = 0.0
     for batch in loader:
-        inputs, targets = batch
-        inputs, targets = inputs.to(device), targets.to(device)
-        note_targets = targets[:, 0].long()
-        duration_targets = targets[:, 1].long()
-
-        if torch.any(note_targets >= 128) or torch.any(duration_targets >= 128):
-            print("Ошибка: целевые значения выходят за пределы допустимого диапазона.")
-            continue
+        inputs, note_targets, duration_targets = batch
+        inputs.to(device)
+        note_targets.to(device)
+        duration_targets.to(device)
 
         optimizer.zero_grad()
-
         note_out, duration_out = model(inputs)
 
         loss_note = criterion_note(note_out, note_targets)
@@ -50,12 +53,29 @@ for epoch in tqdm(range(epochs)):
         loss = loss_note + loss_duration
         loss.backward()
         optimizer.step()
+    model.eval()
+    loss = 0
+    with torch.no_grad():
+        for batch in loader:
+            inputs, note_targets, duration_targets = batch
+            inputs.to(device)
+            note_targets.to(device)
+            duration_targets.to(device)
 
-        running_loss += loss.item()
+            optimizer.zero_grad()
+            note_out, duration_out = model(inputs)
 
-    print(f'Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(loader)}')
+            loss_note = criterion_note(note_out, note_targets)
+            loss_duration = criterion_duration(duration_out, duration_targets)
+            loss += loss_note + loss_duration
+        if loss < best_loss:
+            best_loss = loss
+            best_model = model.state_dict()
+
+    print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss / len(loader)}')
     if (epoch + 1) % 10 == 0:
-        torch.save(model.state_dict(), f"{models_dir}model{epoch+1}.pth")
+        torch.save(best_model, f"{models_dir}/model{epoch + 1}.pth")
         print(f"Модель сохранена на эпохе {epoch + 1}")
 
-print("Обучение завершено!")
+torch.save(best_model, f"{models_dir}/best-model.pth")
+print(f"Обучение завершено! Loss: {best_loss}")
