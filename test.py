@@ -8,9 +8,9 @@ from models import MusicGenerationModel
 
 batch_size = 64
 seq_len = 50
-max_file_num = 1
+max_file_num = 2
 hidden_dim = 512
-epochs = 1000
+epochs = 100
 learning_rate = 0.001
 
 data_dir = "./data/irish/*.mid"
@@ -21,7 +21,7 @@ save_model_file = "model.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Вычисляем на {device}...")
 
-training_data = MidiNotesDataset(files, seq_len, transpositions=[0])
+training_data = MidiNotesDataset(files, seq_len, transpositions=range(-6, 6))
 print(f"Загружено {len(training_data)} последовательностей...")
 loader = torch.utils.data.DataLoader(training_data, batch_size=batch_size, shuffle=True)
 
@@ -32,8 +32,8 @@ idx_to_duration = training_data.idx_to_duration
 torch.save([idx_to_note, idx_to_duration], f"{models_dir}/vocabs.pth")
 
 model = MusicGenerationModel(2, hidden_dim, n_notes_vocab, n_durations_vocab).to(device)
-criterion_note = nn.NLLLoss()
-criterion_duration = nn.NLLLoss()
+criterion_note = nn.CrossEntropyLoss()
+criterion_duration = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 best_model = None

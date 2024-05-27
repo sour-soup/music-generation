@@ -16,6 +16,4 @@ class MusicGenerationModel(nn.Module):
         dropout_out = self.dropout(lstm_out)
         note_out = self.fc_note(dropout_out)
         duration_out = self.fc_duration(dropout_out)
-        note_out = F.log_softmax(note_out, dim=1)
-        duration_out = F.log_softmax(duration_out, dim=1)
         return note_out, duration_out
