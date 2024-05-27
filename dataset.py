@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from tqdm import tqdm
 from torch.utils.data import Dataset
@@ -12,6 +13,16 @@ class MidiNotesDataset(Dataset):
         self.quantization = quantization
         self.data = []
         self._load_data()
+
+        notes = sorted(list(set(x[0] for sequence in self.data for x in sequence)))
+        durations = sorted(list(set(x[1] for sequence in self.data for x in sequence)))
+        self.note_to_idx = {note: i for i, note in enumerate(notes)}
+        self.idx_to_note = {i: note for i, note in enumerate(notes)}
+        self.duration_to_idx = {duration: i for i, duration in enumerate(durations)}
+        self.idx_to_duration = {i: duration for i, duration in enumerate(durations)}
+
+        self.notes_data = [[self.note_to_idx[note[0]] for note in sequence] for sequence in self.data]
+        self.durations_data = [[self.duration_to_idx[note[1]] for note in sequence] for sequence in self.data]
 
     def _load_data(self):
         print("Чтение файлов...")
@@ -30,7 +41,11 @@ class MidiNotesDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        sequence = torch.tensor(self.data[idx], dtype=torch.float)
-        X = sequence[:-1]
-        y = sequence[-1]
-        return X, y
+        notes = torch.tensor(self.notes_data[idx], dtype=torch.float)
+        durations = torch.tensor(self.durations_data[idx], dtype=torch.float)
+        note_target = notes[-1].long()
+        duration_target = durations[-1].long()
+        notes = (notes[:-1] / len(self.note_to_idx)).reshape(-1, 1)
+        durations = (durations[:-1] / len(self.duration_to_idx)).reshape(-1, 1)
+        inputs = torch.cat((notes, durations), dim=-1)
+        return inputs, note_target, duration_target
